@@ -1,7 +1,25 @@
 Install these depandancy packages from npm 
 ```json
-@nestjs/mongoose mongoose @nestjs/cache-manager cache-manager cache-manager-redis-store@2.0.0 @nestjs/config
+npm install --save @liaoliaots/nestjs-redis ioredis
 ```
-In docker-compose file we need to run redis and redis-commander instance. redis-commander is a redis data visualizer tool like pgadmin4 for postgres.
 
+Spin up this application using docker-compose orcastration tool
+`docker-compose up --build`
 
+**request these endpoint to test**
+
+post request 
+`http://localhost:3000/demo`
+```
+body: {
+  "name":"test name",
+  "age":4,
+  "gender":"women",
+  "email":"test@gmail.com"
+}
+```
+
+get request
+`http://localhost:3000/demo`
+
+response should getting data from redis caching server

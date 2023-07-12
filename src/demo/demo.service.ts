@@ -1,21 +1,21 @@
 // update demo.service.ts
-import { Inject, Injectable } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Injectable } from '@nestjs/common';
 import { CreateDemoDto } from './dto/create-demo.dto';
 import { UpdateDemoDto } from './dto/update-demo.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Demo } from './schemas/demo.schema';
-import { Cache } from 'cache-manager';
-import { CacheService } from 'src/cache/cache.service';
+import Redis from 'ioredis'
+import { RedisService } from '@liaoliaots/nestjs-redis';
 
 @Injectable()
 export class DemoService {
+  private readonly redis: Redis;
   constructor(
     @InjectModel(Demo.name) private demoModel: Model<Demo>,
-    private cacheService: CacheService
+    private readonly redisService: RedisService
   ) {
-
+    this.redis = this.redisService.getClient();
   }
   async create(createDemoDto: CreateDemoDto): Promise<Demo> {
     const createdDemo = new this.demoModel(createDemoDto);
@@ -24,20 +24,17 @@ export class DemoService {
 
   async findAll(): Promise<object> {
     try {
-      const cachedData = await this.cacheService.get('demo_data');
+      const cachedData= await this.redis.get('demo_data');
       console.log({cachedData});
       if (cachedData) {
-        // Data found in cache, set fromCache to true
         return {  cachedData, fromCache: true };
       }
 
       const data = await this.demoModel.find({}, { _id: 1, name: 1, age: 1, gender: 1, email: 1 }).exec();
-      
-      console.log('data ====> ', JSON.stringify(data))
-      // Cache the data for future use
 
-      const cacheData = await this.cacheService.set('demo_data', 'test demo saved data');
+      const cacheData = await this.redis.set('demo_data', JSON.stringify(data))
       console.log('cache data ====> ', JSON.stringify(cacheData))
+      
       // Set fromCache to false for newly fetched data
       return { data, fromCache: false };
     } catch (e) {
